@@ -407,7 +407,8 @@ button:active:not(:disabled) { transform: scale(0.97); }
   flex-shrink: 0;
 }
 .drawer.open { max-height: 680px; }
-.drawer-body { padding: var(--sp5) var(--sp6); display: flex; flex-direction: row; gap: 0; align-items: stretch; }
+.drawer-body { padding: var(--sp5) var(--sp6); display: flex; flex-direction: column; gap: var(--sp4); }
+.drawer-body--row { flex-direction: row; gap: 0; align-items: stretch; }
 
 /* Settings drawer */
 .settings-grid {
@@ -1249,7 +1250,7 @@ main {
     <span class="drawer-header-title">Source</span>
     <button class="drawer-close" onclick="toggleBaseDrawer()" aria-label="Close source drawer">✕</button>
   </div>
-  <div class="drawer-body">
+  <div class="drawer-body drawer-body--row">
 
     <!-- Left 70%: tabs + content -->
     <div class="source-main">
