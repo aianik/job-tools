@@ -98,7 +98,9 @@ body {
   background: var(--s0);
   color: var(--t1);
   min-height: 100vh;
+  min-height: 100dvh;
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1762,8 +1764,7 @@ function updateStatus() {
     const s = freeLeft === 1 ? '' : 's';
     text.textContent = `${freeLeft} free use${s} left`;
     pill.className = 'status-pill free';
-    msg.innerHTML = `<strong>${freeLeft} free use${s} remaining.</strong> Add your own API key to keep going after.`;
-    banner.classList.add('visible');
+    banner.classList.remove('visible');
   } else {
     text.textContent = 'Setup required';
     pill.className = 'status-pill';
