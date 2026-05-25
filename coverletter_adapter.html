@@ -15,42 +15,42 @@
    Design System
    ───────────────────────────────────────────────────────────────────────── */
 :root {
-  /* Surfaces — deep cool slate, 4 depth levels */
-  --s0: #0f1419;   /* page */
-  --s1: #161c24;   /* panel */
-  --s2: #1c2430;   /* elevated */
-  --s3: #222c3c;   /* tooltip / popover */
+  /* Surfaces — cool slate, mid-tone (lighter than dark mode, darker than light mode) */
+  --s0: #2a3a4a;   /* page / inputs */
+  --s1: #324455;   /* panels, header, drawers */
+  --s2: #3a4e62;   /* elevated UI (buttons, format bar) */
+  --s3: #42586e;   /* deepest surface (hover, toast, popover) */
 
-  /* Borders — slate */
-  --b1: #263040;   /* default */
-  --b2: #2f3b4e;   /* emphasis */
-  --b3: #3d4e62;   /* interactive focus */
+  /* Borders — slate-blue */
+  --b1: #4e6478;   /* default */
+  --b2: #5c7490;   /* emphasis */
+  --b3: #6a84a0;   /* interactive focus */
 
   /* Text — cool light */
-  --t1: #cdd5e0;   /* primary */
-  --t2: #7a8fa6;   /* secondary */
-  --t3: #485a6e;   /* muted / placeholder */
+  --t1: #d8e4f0;   /* primary */
+  --t2: #8aa4bc;   /* secondary */
+  --t3: #567088;   /* muted / placeholder */
 
   /* Brand — teal */
   --teal-6:  #1a8c7e;
   --teal-5:  #2eb8a8;
   --teal-4:  #4ecdc0;
   --teal-3:  #7eddd4;
-  --teal-bg: rgba(46,184,168,0.08);
+  --teal-bg: rgba(46,184,168,0.12);
 
   /* Status */
   --ok:       #3abf8a;
-  --ok-bg:    rgba(58,191,138,0.08);
-  --ok-ring:  rgba(58,191,138,0.25);
+  --ok-bg:    rgba(58,191,138,0.10);
+  --ok-ring:  rgba(58,191,138,0.28);
   --err:      #e05c5c;
-  --err-bg:   rgba(224,92,92,0.08);
-  --err-ring: rgba(224,92,92,0.25);
+  --err-bg:   rgba(224,92,92,0.10);
+  --err-ring: rgba(224,92,92,0.28);
   --warn:     #e8a62a;
   --info:     #5ba8d4;
 
-  /* Paper (letter document) — cool near-white */
-  --paper-bg:   #f7f9fb;
-  --paper-ink:  #18202b;
+  /* Paper (letter document) — pure white for document feel */
+  --paper-bg:   #ffffff;
+  --paper-ink:  #1e1a16;
 
   /* Spacing — strict 8px grid */
   --sp1: 4px;
@@ -161,14 +161,14 @@ body {
   display: flex;
   align-items: center;
   gap: var(--sp1);
-  font-family: var(--f-mono);
+  font-family: var(--f-ui);
   font-size: var(--tx-sm);
   color: var(--t1);
   padding: 2px 10px;
   background: var(--s2);
   border: 1px solid var(--b2);
   border-radius: 20px;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.01em;
   cursor: pointer;
   transition: border-color var(--t-base), color var(--t-base), background var(--t-base);
 }
@@ -198,7 +198,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-family: var(--f-mono);
+  font-family: var(--f-ui);
   font-size: var(--tx-sm);
   padding: 3px 10px;
   border-radius: 20px;
@@ -208,7 +208,7 @@ body {
   cursor: pointer;
   user-select: none;
   transition: border-color var(--t-base);
-  letter-spacing: 0.03em;
+  letter-spacing: 0.01em;
 }
 .status-pill .s-dot {
   width: 6px; height: 6px;
@@ -292,11 +292,11 @@ button:active:not(:disabled) { transform: scale(0.97); }
   padding: 8px 16px;
   font-size: var(--tx-md);
   font-weight: 600;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.10);
 }
 .btn-primary:hover:not(:disabled) {
   background: var(--teal-4);
-  box-shadow: 0 2px 8px rgba(46,184,168,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
+  box-shadow: 0 2px 8px rgba(46,184,168,0.35), inset 0 1px 0 rgba(255,255,255,0.10);
 }
 .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
@@ -314,24 +314,17 @@ button:active:not(:disabled) { transform: scale(0.97); }
   justify-content: center;
   gap: var(--sp2);
   letter-spacing: -0.01em;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.06) inset;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.20), 0 0 0 1px rgba(255,255,255,0.08) inset;
   position: relative;
 }
 .btn-cta:hover:not(:disabled) {
   background: linear-gradient(180deg, var(--teal-4) 0%, var(--teal-5) 100%);
-  box-shadow: 0 4px 12px rgba(46,184,168,0.4), 0 0 0 1px rgba(255,255,255,0.08) inset;
+  box-shadow: 0 4px 12px rgba(46,184,168,0.30), 0 0 0 1px rgba(255,255,255,0.10) inset;
   transform: translateY(-1px);
 }
 .btn-cta:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-.btn-cta .kbd-hint {
-  position: absolute;
-  right: var(--sp3);
-  font-family: var(--f-mono);
-  font-size: 10px;
-  opacity: 0.55;
-  letter-spacing: 0;
-}
+.btn-cta .kbd-hint { display: none; }
 
 /* Spinner */
 .spinner {
@@ -356,8 +349,8 @@ button:active:not(:disabled) { transform: scale(0.97); }
   gap: var(--sp4);
   flex-wrap: wrap;
   padding: var(--sp3) var(--sp6);
-  background: linear-gradient(90deg, rgba(46,184,168,0.1), rgba(91,168,212,0.06));
-  border-bottom: 1px solid rgba(46,184,168,0.2);
+  background: linear-gradient(90deg, rgba(46,184,168,0.14), rgba(91,168,212,0.08));
+  border-bottom: 1px solid rgba(46,184,168,0.28);
   flex-shrink: 0;
 }
 .setup-banner.visible { display: flex; }
@@ -677,10 +670,10 @@ button:active:not(:disabled) { transform: scale(0.97); }
   flex-shrink: 0;
 }
 .panel-title {
-  font-size: var(--tx-xs);
+  font-size: var(--tx-sm);
   font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  text-transform: none;
   color: var(--t3);
   white-space: nowrap;
 }
@@ -842,9 +835,9 @@ main {
   background: var(--paper-bg);
   border-radius: var(--r2);
   box-shadow:
-    0 0 0 1px rgba(0,0,0,0.15),
-    0 2px 4px rgba(0,0,0,0.25),
-    0 8px 24px rgba(0,0,0,0.3);
+    0 0 0 1px rgba(0,0,0,0.08),
+    0 2px 8px rgba(0,0,0,0.10),
+    0 8px 24px rgba(0,0,0,0.08);
   color: var(--paper-ink);
   font-family: var(--f-doc);
   font-size: 11pt;
@@ -856,9 +849,9 @@ main {
 }
 .letter-doc:focus {
   box-shadow:
-    0 0 0 2px var(--teal-5),
-    0 2px 4px rgba(0,0,0,0.2),
-    0 8px 24px rgba(0,0,0,0.3);
+    0 0 0 2px var(--teal-6),
+    0 2px 8px rgba(0,0,0,0.10),
+    0 8px 24px rgba(0,0,0,0.08);
 }
 .letter-doc p { margin-bottom: 0.85em; }
 .letter-doc p:last-child { margin-bottom: 0; }
@@ -896,15 +889,15 @@ main {
 .empty-n {
   width: 20px; height: 20px;
   border-radius: 50%;
-  background: #e8e8e4;
-  color: #888;
+  background: var(--s2);
+  color: var(--t3);
   font-size: 10px;
   font-weight: 600;
   display: grid; place-items: center;
   flex-shrink: 0;
 }
-.empty-step-text { font-size: 11pt; color: #aaa; }
-.empty-step-arrow { font-size: 11pt; color: #ccc; margin: 0 auto; }
+.empty-step-text { font-size: 11pt; color: var(--t3); }
+.empty-step-arrow { font-size: 11pt; color: var(--b2); margin: 0 auto; }
 
 /* ─────────────────────────────────────────────────────────────────────────
    Toast — non-blocking feedback (Nielsen #1: visibility of status)
@@ -926,7 +919,7 @@ main {
   color: var(--t1);
   font-size: var(--tx-sm);
   padding: var(--sp3) var(--sp4);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
   display: flex;
   align-items: center;
   gap: var(--sp2);
@@ -959,7 +952,7 @@ main {
   background: var(--s1);
   border: 1px solid var(--b2);
   border-radius: var(--r4);
-  box-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04) inset;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06);
   max-width: 460px;
   width: 100%;
   display: flex;
@@ -1024,8 +1017,8 @@ main {
   min-width: 22px; height: 22px;
   border-radius: 50%;
   background: var(--teal-bg);
-  border: 1px solid rgba(46,184,168,0.3);
-  color: var(--teal-4);
+  border: 1px solid rgba(26,140,126,0.35);
+  color: var(--teal-6);
   font-size: 11px;
   font-weight: 600;
   display: grid; place-items: center;
@@ -1118,7 +1111,7 @@ main {
      Header
      ──────────────────────────────────────────────────────────────────────── -->
 <header class="app-header" role="banner">
-  <a class="brand" href="#" aria-label="Cover Letter Adapter home">
+  <a class="brand" href="" onclick="event.preventDefault(); location.reload();" aria-label="Cover Letter Adapter home">
     <div class="brand-mark" aria-hidden="true">CL</div>
     <span class="brand-name">Cover Letter Adapter</span>
   </a>
