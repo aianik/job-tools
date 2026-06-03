@@ -4,6 +4,12 @@ on:
   push:
     branches: [main]
     paths:
+      - 'src/**'
+      - 'index.html'
+      - 'package.json'
+      - 'vite.config.ts'
+      - 'tsconfig*.json'
+      - 'resumeTailorer/**'
       - 'coverLetterAdapter/**'
 
 permissions:
@@ -23,18 +29,34 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-          cache-dependency-path: coverLetterAdapter/package-lock.json
-      - run: npm ci
+
+      - name: Build home
+        run: npm ci && npm run build
+
+      - name: Build resumeTailorer
+        run: npm ci && npm run build
+        working-directory: resumeTailorer
+
+      - name: Build coverLetterAdapter
+        run: npm ci && npm run build
         working-directory: coverLetterAdapter
-      - run: npm run build
-        working-directory: coverLetterAdapter
+
+      - name: Assemble pages artifact
+        run: |
+          mkdir -p pages
+          cp -r dist/. pages/
+          cp -r resumeTailorer/dist pages/resumeTailorer
+          cp -r coverLetterAdapter/dist pages/coverLetterAdapter
+
       - uses: actions/configure-pages@v4
+
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: coverLetterAdapter/dist
+          path: pages
+
       - id: deployment
         uses: actions/deploy-pages@v4
