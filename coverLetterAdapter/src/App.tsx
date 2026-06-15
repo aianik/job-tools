@@ -46,7 +46,7 @@ export default function App() {
   })
   const [pdfFontSize, setPdfFontSize] = useState(() => parseFloat(localStorage.getItem('pdf_size') ?? '') || 11)
   const [toasts, setToasts] = useState<ToastItem[]>([])
-  const [jobPosting, setJobPosting] = useState(() => localStorage.getItem('jt_job_posting') ?? '')
+  const [jobPosting] = useState(() => localStorage.getItem('jt_job_posting') ?? '')
   const [welcomeOpen, setWelcomeOpen] = useState(!localStorage.getItem('welcomed'))
   const [freeLeft, setFreeLeft] = useState(() => getFreeAttemptsLeft())
   const [hasSource, setHasSource] = useState(() =>
