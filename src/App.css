@@ -73,6 +73,57 @@
   line-height: 1.65;
 }
 
+/* ── Job input ── */
+.job-input-section {
+  width: 100%;
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.job-input-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.job-input-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--t2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.job-input-ready {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--teal-4);
+}
+
+.job-textarea {
+  width: 100%;
+  height: 140px;
+  resize: vertical;
+  background: var(--s1);
+  border: 1px solid var(--b1);
+  border-radius: var(--r-md);
+  color: var(--t1);
+  font-family: var(--f-ui);
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 14px 16px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.job-textarea:focus { border-color: var(--teal-5); }
+.job-textarea::placeholder { color: var(--t3); }
+
 /* ── Tools grid ── */
 .tools-grid {
   display: grid;
@@ -116,10 +167,20 @@
 
 .tool-card:hover::before { opacity: 1; }
 
+.tool-card--disabled { opacity: 0.55; cursor: not-allowed; }
+.tool-card--disabled:hover {
+  border-color: var(--b1);
+  background: var(--s1);
+  transform: none;
+  box-shadow: none;
+}
+.tool-card--disabled:hover::before { opacity: 0; }
+
 .card-top {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  gap: 8px;
 }
 
 .card-icon {
@@ -134,14 +195,27 @@
   color: var(--teal-4);
 }
 
-.card-arrow {
-  color: var(--t3);
-  transition: color 0.18s, transform 0.18s;
+.source-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 100px;
+  padding: 3px 9px;
+  white-space: nowrap;
 }
 
-.tool-card:hover .card-arrow {
+.source-badge--ready {
   color: var(--teal-4);
-  transform: translate(2px, -2px);
+  background: var(--teal-bg);
+  border: 1px solid rgba(46,184,168,0.25);
+}
+
+.source-badge--missing {
+  color: var(--t3);
+  background: var(--s0);
+  border: 1px solid var(--b1);
 }
 
 .card-body { display: flex; flex-direction: column; gap: 6px; }
@@ -190,7 +264,12 @@
   transition: background 0.15s;
 }
 
-.tool-card:hover .card-cta { background: var(--teal-5); }
+.card-cta--muted {
+  background: var(--s2);
+  color: var(--t3);
+}
+
+.tool-card:not(.tool-card--disabled):hover .card-cta:not(.card-cta--muted) { background: var(--teal-5); }
 
 /* ── Footer ── */
 .footer {

@@ -4,7 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 5174",
+    "dev:all": "concurrently -n home,resume,cl -c blue,green,yellow \"npm run dev\" \"npm run dev --prefix resumeTailorer\" \"npm run dev --prefix coverLetterAdapter\"",
     "build": "tsc -b && vite build",
     "preview": "vite preview"
   },
@@ -16,6 +17,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^10.0.3",
     "typescript": "~5.6.2",
     "vite": "^6.0.5"
   }

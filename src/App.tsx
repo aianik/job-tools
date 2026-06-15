@@ -1,4 +1,21 @@
+import { useState, useCallback } from 'react'
 import './App.css'
+
+const SHARED_JOB_KEY = 'jt_job_posting'
+const TRIGGER_PREFIX = 'jt_pending_trigger_'
+
+function getResumeSourceStatus(): 'ready' | 'missing' {
+  try {
+    const v = JSON.parse(localStorage.getItem('rt_resume_text') ?? 'null')
+    return typeof v === 'string' && v.trim().length > 0 ? 'ready' : 'missing'
+  } catch { return 'missing' }
+}
+
+function getCoverLetterSourceStatus(): 'ready' | 'missing' {
+  const base = localStorage.getItem('base_letter')?.trim()
+  const cv = localStorage.getItem('cv_text')?.trim()
+  return base || cv ? 'ready' : 'missing'
+}
 
 type Tool = {
   id: string
@@ -6,6 +23,8 @@ type Tool = {
   desc: string
   tags: string[]
   href: string
+  sourceStatus: () => 'ready' | 'missing'
+  sourceLabel: string
   icon: React.ReactNode
 }
 
@@ -13,9 +32,11 @@ const tools: Tool[] = [
   {
     id: 'resume',
     name: 'Resume Tailorer',
-    desc: 'Paste a job description and get your resume adapted to match — LaTeX or plain text, exported as a clean PDF.',
+    desc: 'Adapts your resume to match the job posting. Supports LaTeX and plain text, exports as PDF.',
     tags: ['LaTeX', 'PDF export', 'Inline editing'],
     href: './resumeTailorer/',
+    sourceStatus: getResumeSourceStatus,
+    sourceLabel: 'Resume source',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -29,9 +50,11 @@ const tools: Tool[] = [
   {
     id: 'coverletter',
     name: 'Cover Letter Adapter',
-    desc: 'Adapt your base cover letter or CV to any job posting — personalized tone, tailored framing, exported as PDF.',
+    desc: 'Adapts your cover letter or CV to the job posting. Personalized tone, exported as PDF.',
     tags: ['Persona', 'PDF export', 'CV-aware'],
     href: './coverLetterAdapter/',
+    sourceStatus: getCoverLetterSourceStatus,
+    sourceLabel: 'Letter / CV source',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
@@ -41,16 +64,24 @@ const tools: Tool[] = [
   },
 ]
 
-function ArrowIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="7" y1="17" x2="17" y2="7"/>
-      <polyline points="7,7 17,7 17,17"/>
-    </svg>
-  )
-}
-
 export default function App() {
+  const [jobPosting, setJobPosting] = useState(() => localStorage.getItem(SHARED_JOB_KEY) ?? '')
+  const [, forceUpdate] = useState(0)
+
+  const handleJobChange = useCallback((val: string) => {
+    setJobPosting(val)
+    localStorage.setItem(SHARED_JOB_KEY, val)
+  }, [])
+
+  function handleCardClick(tool: Tool, e: React.MouseEvent) {
+    e.preventDefault()
+    if (!jobPosting.trim()) return
+    localStorage.setItem(TRIGGER_PREFIX + tool.id, '1')
+    window.open(tool.href, '_blank')
+  }
+
+  const hasJob = jobPosting.trim().length > 0
+
   return (
     <div className="layout">
       <header className="header">
@@ -73,33 +104,83 @@ export default function App() {
           <span className="hero-label">AI-powered</span>
           <h1 className="hero-title">Your job search,<br /><span>sharpened</span></h1>
           <p className="hero-desc">
-            A small suite of tools to help you apply smarter — tailor your resume and cover letter to any job posting in seconds.
+            Paste a job posting below, then launch the tools you need. Each one opens ready to generate.
           </p>
         </div>
 
-        <div className="tools-grid">
-          {tools.map(tool => (
-            <a key={tool.id} className="tool-card" href={tool.href}>
-              <div className="card-top">
-                <div className="card-icon">{tool.icon}</div>
-                <div className="card-arrow"><ArrowIcon /></div>
-              </div>
-              <div className="card-body">
-                <div className="card-name">{tool.name}</div>
-                <div className="card-desc">{tool.desc}</div>
-                <div className="card-tags">
-                  {tool.tags.map(tag => <span key={tag} className="tag">{tag}</span>)}
-                </div>
-              </div>
-              <span className="card-cta">
-                Open tool
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="5" y1="12" x2="19" y2="12"/>
-                  <polyline points="12,5 19,12 12,19"/>
+        <div className="job-input-section">
+          <div className="job-input-header">
+            <label className="job-input-label" htmlFor="jobPosting">Job Posting</label>
+            {hasJob && (
+              <span className="job-input-ready">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20,6 9,17 4,12"/>
                 </svg>
+                Ready
               </span>
-            </a>
-          ))}
+            )}
+          </div>
+          <textarea
+            id="jobPosting"
+            className="job-textarea"
+            placeholder="Paste the full job posting here — title, company, responsibilities, requirements…"
+            value={jobPosting}
+            onChange={e => handleJobChange(e.target.value)}
+            spellCheck={false}
+          />
+        </div>
+
+        <div className="tools-grid">
+          {tools.map(tool => {
+            const status = tool.sourceStatus()
+            const canLaunch = hasJob
+            return (
+              <a
+                key={tool.id}
+                className={`tool-card${!canLaunch ? ' tool-card--disabled' : ''}`}
+                href={tool.href}
+                onClick={e => handleCardClick(tool, e)}
+                onMouseEnter={() => forceUpdate(n => n + 1)}
+              >
+                <div className="card-top">
+                  <div className="card-icon">{tool.icon}</div>
+                  <div className={`source-badge source-badge--${status}`}>
+                    {status === 'ready' ? (
+                      <>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20,6 9,17 4,12"/>
+                        </svg>
+                        {tool.sourceLabel} ready
+                      </>
+                    ) : (
+                      <>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Add {tool.sourceLabel.toLowerCase()}
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div className="card-body">
+                  <div className="card-name">{tool.name}</div>
+                  <div className="card-desc">{tool.desc}</div>
+                  <div className="card-tags">
+                    {tool.tags.map(tag => <span key={tag} className="tag">{tag}</span>)}
+                  </div>
+                </div>
+                <span className={`card-cta${canLaunch ? '' : ' card-cta--muted'}`}>
+                  {canLaunch ? (status === 'ready' ? 'Launch & generate' : 'Launch tool') : 'Paste job posting first'}
+                  {canLaunch && (
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="5" y1="12" x2="19" y2="12"/>
+                      <polyline points="12,5 19,12 12,19"/>
+                    </svg>
+                  )}
+                </span>
+              </a>
+            )
+          })}
         </div>
       </main>
 
