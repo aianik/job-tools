@@ -1,18 +1,8 @@
 import { useRef } from 'react'
-import type { ResumeData, ResumeSection, ExperienceItem, EducationItem, ProjectItem, SkillCategory, ResumeHeader } from '../types'
+import type { ResumeData, ResumeSection, ExperienceItem, EducationItem, ProjectItem, SkillCategory } from '../types'
 
-type ContactItem = { label: string; href?: string }
-
-function contactItems(h: ResumeHeader): ContactItem[] {
-  const items: ContactItem[] = []
-  if (h.phone)    items.push({ label: h.phone })
-  if (h.email)    items.push({ label: h.email, href: `mailto:${h.email}` })
-  if (h.linkedin) items.push({ label: 'LinkedIn', href: h.linkedin.startsWith('http') ? h.linkedin : `https://${h.linkedin}` })
-  if (h.website)  items.push({ label: 'Website',  href: h.website.startsWith('http')  ? h.website  : `https://${h.website}` })
-  if (h.location) items.push({ label: h.location })
-  // GitHub only included when explicitly present — lower priority than above
-  if (h.github)   items.push({ label: 'GitHub', href: h.github.startsWith('http') ? h.github : `https://github.com/${h.github}` })
-  return items
+function absoluteUrl(value: string, prefix: string): string {
+  return value.startsWith('http') ? value : `${prefix}${value}`
 }
 
 function stripLatex(text: string): string {
@@ -58,6 +48,14 @@ function EditableSpan({
     if (ref.current) onChange(ref.current.innerText)
   }
 
+  // Hide the bullet marker as soon as its text is cleared, without waiting
+  // for blur (and the resulting state update) to remove the list item.
+  function handleInput() {
+    if (!ref.current) return
+    const li = ref.current.closest('li')
+    if (li) li.classList.toggle('bullet-empty', ref.current.innerText.trim() === '')
+  }
+
   return (
     <span
       ref={ref}
@@ -65,6 +63,7 @@ function EditableSpan({
       contentEditable
       suppressContentEditableWarning
       onBlur={handleBlur}
+      onInput={handleInput}
       style={{ whiteSpace: multiline ? 'pre-wrap' : undefined }}
       dangerouslySetInnerHTML={{ __html: value }}
     />
@@ -96,7 +95,9 @@ function ExperienceSection({ section, onChange }: { section: Extract<ResumeSecti
                 <EditableSpan
                   value={b}
                   onChange={v => {
-                    const bullets = item.bullets.map((bb, bj) => bj === bi ? v : bb)
+                    const bullets = item.bullets
+                      .map((bb, bj) => bj === bi ? v : bb)
+                      .filter(bb => bb.trim() !== '')
                     updateItem(i, { ...item, bullets })
                   }}
                   multiline
@@ -136,7 +137,9 @@ function EducationSection({ section, onChange }: { section: Extract<ResumeSectio
                   <EditableSpan
                     value={n}
                     onChange={v => {
-                      const notes = (item.notes ?? []).map((nn, nj) => nj === ni ? v : nn)
+                      const notes = (item.notes ?? [])
+                        .map((nn, nj) => nj === ni ? v : nn)
+                        .filter(nn => nn.trim() !== '')
                       updateItem(i, { ...item, notes })
                     }}
                   />
@@ -203,7 +206,9 @@ function ProjectsSection({ section, onChange }: { section: Extract<ResumeSection
                 <EditableSpan
                   value={b}
                   onChange={v => {
-                    const bullets = item.bullets.map((bb, bj) => bj === bi ? v : bb)
+                    const bullets = item.bullets
+                      .map((bb, bj) => bj === bi ? v : bb)
+                      .filter(bb => bb.trim() !== '')
                     updateItem(i, { ...item, bullets })
                   }}
                   multiline
@@ -259,14 +264,36 @@ export default function ResumeDoc({ resume, onChange, onExportPdf, onExportTex, 
         <div className="doc-header">
           <EditableSpan value={header.name} onChange={v => onChange({ ...resume, header: { ...header, name: v } })} className="doc-name" />
           <div className="doc-contact">
-            {contactItems(header).map((item, i) => (
-              <span key={i} className="doc-contact-item">
-                {item.href
-                  ? <a href={item.href} target="_blank" rel="noreferrer" className="doc-contact-link">{item.label}</a>
-                  : item.label
-                }
+            {header.email && (
+              <span className="doc-contact-item">
+                <EditableSpan value={header.email} onChange={v => onChange({ ...resume, header: { ...header, email: v } })} className="doc-contact-link" />
               </span>
-            ))}
+            )}
+            {header.linkedin && (
+              <span className="doc-contact-item">
+                <a href={absoluteUrl(header.linkedin, 'https://')} target="_blank" rel="noreferrer" className="doc-contact-link">LinkedIn</a>
+              </span>
+            )}
+            {header.website && (
+              <span className="doc-contact-item">
+                <a href={absoluteUrl(header.website, 'https://')} target="_blank" rel="noreferrer" className="doc-contact-link">Website</a>
+              </span>
+            )}
+            {header.phone && (
+              <span className="doc-contact-item">
+                <EditableSpan value={header.phone} onChange={v => onChange({ ...resume, header: { ...header, phone: v } })} />
+              </span>
+            )}
+            {header.location && (
+              <span className="doc-contact-item">
+                <EditableSpan value={header.location} onChange={v => onChange({ ...resume, header: { ...header, location: v } })} />
+              </span>
+            )}
+            {header.github && (
+              <span className="doc-contact-item">
+                <a href={absoluteUrl(header.github, 'https://github.com/')} target="_blank" rel="noreferrer" className="doc-contact-link">GitHub</a>
+              </span>
+            )}
           </div>
         </div>
 
@@ -311,7 +338,9 @@ export default function ResumeDoc({ resume, onChange, onExportPdf, onExportTex, 
                     <EditableSpan
                       value={item.citation}
                       onChange={v => {
-                        const items = section.items.map((it, j) => j === pi ? { ...it, citation: v } : it)
+                        const items = section.items
+                          .map((it, j) => j === pi ? { ...it, citation: v } : it)
+                          .filter(it => it.citation.trim() !== '')
                         updateSection(idx, { ...section, items })
                       }}
                       multiline
@@ -329,7 +358,10 @@ export default function ResumeDoc({ resume, onChange, onExportPdf, onExportTex, 
                       <EditableSpan
                         value={line}
                         onChange={v => {
-                          const updated = lines.map((l, j) => j === li ? v : l).join('\n')
+                          const updated = lines
+                            .map((l, j) => j === li ? v : l)
+                            .filter(l => l.trim() !== '')
+                            .join('\n')
                           updateSection(idx, { ...section, content: updated })
                         }}
                         multiline

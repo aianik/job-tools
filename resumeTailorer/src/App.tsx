@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import type { ResumeData, ToastItem, InputTab, PersonaData, PdfFont, PdfSize } from './types'
 import { adaptResume } from './lib/api'
 import { exportResumePdf, preloadFonts } from './lib/pdfExport'
@@ -46,7 +46,7 @@ export default function App() {
   const [persona, setPersona] = useState<PersonaData>(() => ls(LS.persona, defaultPersona))
   const [pdfFont, setPdfFont] = useState<PdfFont>(() => ls(LS.pdfFont, 'crimsonpro'))
   const [pdfSize, setPdfSize] = useState<PdfSize>(() => ls(LS.pdfSize, 'regular'))
-  const [jobText, setJobText] = useState('')
+  const [jobText, setJobText] = useState(() => localStorage.getItem('jt_job_posting') ?? '')
   const [resume, setResume] = useState<ResumeData | null>(null)
   const [loading, setLoading] = useState(false)
   const [pdfExporting, setPdfExporting] = useState(false)
@@ -54,6 +54,21 @@ export default function App() {
   const [sourceOpen, setSourceOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const paperRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const triggered = localStorage.getItem('jt_pending_trigger_resume')
+    if (!triggered) return
+    localStorage.removeItem('jt_pending_trigger_resume')
+    const job = localStorage.getItem('jt_job_posting') ?? ''
+    if (!job.trim()) return
+    const src = (() => { try { return JSON.parse(localStorage.getItem(LS.resumeText) ?? 'null') ?? '' } catch { return '' } })()
+    if (src.trim()) {
+      setTimeout(() => handleAdapt(), 100)
+    } else {
+      setSourceOpen(true)
+      setTimeout(() => toast('Job posting loaded. Add your resume source to generate.', 'info'), 200)
+    }
+  }, [])
 
   function toast(message: string, type: ToastItem['type'] = 'success') {
     const id = Math.random().toString(36).slice(2)
@@ -113,7 +128,7 @@ export default function App() {
         persona.targetRole || persona.tone || persona.strengths || persona.avoid ? persona : null
       )
       setResume(result)
-      if (pdfFont === 'crimsonpro') preloadFonts().catch(() => {})
+      preloadFonts(pdfFont).catch(() => {})
       if (usingTrial) {
         consumeTrialUse()
         const left = getRemainingTrialUses()
@@ -155,10 +170,28 @@ export default function App() {
   return (
     <div className="app">
       <Header
+        apiKey={apiKey}
         onOpenSource={() => setSourceOpen(true)}
         onOpenSettings={() => setSettingsOpen(true)}
         hasResume={resumeText.trim().length > 0}
       />
+
+      {!resumeText.trim() && (
+        <div className="setup-banner source-banner">
+          <p className="setup-banner-text">
+            <strong>Add your resume source</strong> (LaTeX or plain text) in Source — the AI needs it to tailor your resume.
+          </p>
+          <button className="btn-primary" onClick={() => setSourceOpen(true)}>Open Source →</button>
+        </div>
+      )}
+      {!apiKey && getRemainingTrialUses() <= 0 && (
+        <div className="setup-banner">
+          <p className="setup-banner-text">
+            <strong>Free uses exhausted.</strong> Add your Anthropic API key in Settings to continue.
+          </p>
+          <button className="btn-primary" onClick={() => setSettingsOpen(true)}>Open Settings →</button>
+        </div>
+      )}
 
       <main className="app-main">
         <JobPanel

@@ -7,6 +7,10 @@ type Props = {
 }
 
 export default function JobPanel({ jobText, onJobChange, onAdapt, loading, canAdapt }: Props) {
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') onAdapt()
+  }
+
   return (
     <div className="job-panel">
       <div className="panel-header">
@@ -14,9 +18,10 @@ export default function JobPanel({ jobText, onJobChange, onAdapt, loading, canAd
       </div>
       <textarea
         className="job-textarea"
-        placeholder="Paste the job description here..."
+        placeholder="Paste the job description here…"
         value={jobText}
         onChange={e => onJobChange(e.target.value)}
+        onKeyDown={handleKeyDown}
         spellCheck={false}
       />
       <div className="job-panel-footer">
@@ -24,25 +29,12 @@ export default function JobPanel({ jobText, onJobChange, onAdapt, loading, canAd
           className="btn-adapt"
           onClick={onAdapt}
           disabled={!canAdapt || loading}
+          aria-label="Tailor resume (Ctrl+Enter)"
         >
-          {loading ? (
-            <>
-              <span className="spinner" />
-              Tailoring...
-            </>
-          ) : (
-            <>
-              Tailor Resume
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12"/>
-                <polyline points="12,5 19,12 12,19"/>
-              </svg>
-            </>
-          )}
+          {loading && <span className="spinner" />}
+          <span>{loading ? 'Tailoring…' : 'Tailor Resume'}</span>
+          {!loading && <span className="kbd-hint">Ctrl ↵</span>}
         </button>
-        {!canAdapt && !loading && (
-          <p className="adapt-hint">Add your resume source and an API key first</p>
-        )}
       </div>
     </div>
   )

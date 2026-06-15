@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { PdfFont, PdfSize } from '../types'
+import { PDF_FONTS } from '../lib/pdfExport'
 
 type Props = {
   open: boolean
@@ -12,11 +13,9 @@ type Props = {
   onPdfSizeChange: (s: PdfSize) => void
 }
 
-const FONTS: { value: PdfFont; label: string; desc: string }[] = [
-  { value: 'crimsonpro', label: 'Crimson Pro',      desc: 'Elegant serif (matches editor)' },
-  { value: 'times',      label: 'Times New Roman',  desc: 'Classic academic serif' },
-  { value: 'helvetica',  label: 'Helvetica',        desc: 'Clean sans-serif' },
-]
+const FONTS = (Object.entries(PDF_FONTS) as [PdfFont, { label: string }][]).map(
+  ([value, { label }]) => ({ value, label })
+)
 
 const SIZES: { value: PdfSize; label: string }[] = [
   { value: 'compact',  label: 'Compact (10 pt)' },
@@ -73,7 +72,6 @@ export default function SettingsDrawer({ open, onClose, apiKey, onApiKeyChange, 
                 onClick={() => onPdfFontChange(f.value)}
               >
                 <span className="settings-option-label">{f.label}</span>
-                <span className="settings-option-desc">{f.desc}</span>
               </button>
             ))}
           </div>

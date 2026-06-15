@@ -1,10 +1,25 @@
+import { getRemainingTrialUses } from '../lib/freeTrialKey'
+
 type Props = {
+  apiKey: string
   onOpenSource: () => void
   onOpenSettings: () => void
   hasResume: boolean
 }
 
-export default function Header({ onOpenSource, onOpenSettings, hasResume }: Props) {
+export default function Header({ apiKey, onOpenSource, onOpenSettings, hasResume }: Props) {
+  const freeLeft = getRemainingTrialUses()
+
+  let pillClass = 'status-pill'
+  let pillText = 'Setup required'
+  if (apiKey) {
+    pillClass += ' ready'
+    pillText = 'Ready'
+  } else if (freeLeft > 0) {
+    pillClass += ' free'
+    pillText = `${freeLeft} free use${freeLeft === 1 ? '' : 's'} left`
+  }
+
   return (
     <header className="app-header">
       <div className="header-brand">
@@ -21,8 +36,13 @@ export default function Header({ onOpenSource, onOpenSettings, hasResume }: Prop
         <span className="header-sub">by job-tools</span>
       </div>
       <div className="header-actions">
+        <div className={pillClass} onClick={onOpenSettings} role="button" tabIndex={0}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onOpenSettings() }}>
+          <span className="s-dot" />
+          <span>{pillText}</span>
+        </div>
         <button
-          className={`btn-ghost ${hasResume ? 'btn-ghost--active' : ''}`}
+          className={`btn-ghost${hasResume ? ' btn-ghost--active' : ''}`}
           onClick={onOpenSource}
           title="Resume source"
         >
@@ -30,7 +50,7 @@ export default function Header({ onOpenSource, onOpenSettings, hasResume }: Prop
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
             <polyline points="14,2 14,8 20,8"/>
           </svg>
-          Resume
+          Source
           {hasResume && <span className="badge-dot" />}
         </button>
         <button className="btn-ghost" onClick={onOpenSettings} title="Settings">

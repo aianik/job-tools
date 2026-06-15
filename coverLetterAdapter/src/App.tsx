@@ -46,6 +46,7 @@ export default function App() {
   })
   const [pdfFontSize, setPdfFontSize] = useState(() => parseFloat(localStorage.getItem('pdf_size') ?? '') || 11)
   const [toasts, setToasts] = useState<ToastItem[]>([])
+  const [jobPosting, setJobPosting] = useState(() => localStorage.getItem('jt_job_posting') ?? '')
   const [welcomeOpen, setWelcomeOpen] = useState(!localStorage.getItem('welcomed'))
   const [freeLeft, setFreeLeft] = useState(() => getFreeAttemptsLeft())
   const [hasSource, setHasSource] = useState(() =>
@@ -98,6 +99,21 @@ export default function App() {
     }
     document.addEventListener('keydown', handleEsc)
     return () => document.removeEventListener('keydown', handleEsc)
+  }, [])
+
+  useEffect(() => {
+    const triggered = localStorage.getItem('jt_pending_trigger_coverletter')
+    if (!triggered) return
+    localStorage.removeItem('jt_pending_trigger_coverletter')
+    const job = localStorage.getItem('jt_job_posting') ?? ''
+    if (!job.trim()) return
+    const hasSource = !!(localStorage.getItem('base_letter')?.trim() || localStorage.getItem('cv_text')?.trim())
+    if (hasSource) {
+      setTimeout(() => handleAdapt(job), 100)
+    } else {
+      setSourceOpen(true)
+      setTimeout(() => showToast('Job posting loaded. Add your letter or CV source to generate.'), 200)
+    }
   }, [])
 
   function toggleSettings() {
@@ -295,6 +311,7 @@ export default function App() {
           inputTab={inputTab}
           templateReady={templateReady}
           cvReady={cvReady}
+          initialJobPosting={jobPosting}
           onTabChange={setInputTab}
           onAdapt={handleAdapt}
         />

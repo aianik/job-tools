@@ -15,11 +15,11 @@ function buildTexFromData(resume: ResumeData): string {
   const { header, summary, sections } = resume
 
   const contactLine = [
-    header.phone && `\\faPhone\\ ${header.phone}`,
     header.email && `\\href{mailto:${header.email}}{\\faEnvelope\\ ${header.email}}`,
     header.linkedin && `\\href{${header.linkedin}}{\\faLinkedin\\ LinkedIn}`,
-    header.github && `\\href{${header.github}}{\\faGithub\\ GitHub}`,
     header.website && `\\href{${header.website}}{\\faGlobe\\ ${header.website}}`,
+    header.phone && `\\faPhone\\ ${header.phone}`,
+    header.github && `\\href{${header.github}}{\\faGithub\\ GitHub}`,
   ].filter(Boolean).join(' $|$ ')
 
   const lines: string[] = [

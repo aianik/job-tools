@@ -92,40 +92,79 @@ function toBase64(buf: ArrayBuffer): string {
   return btoa(bin)
 }
 
+// ── Font registry ─────────────────────────────────────────────────────────────
+const FS = 'https://cdn.jsdelivr.net/npm/@fontsource'
+
+export const PDF_FONTS: Record<PdfFont, { label: string; name: string }> = {
+  'crimsonpro':        { label: 'Crimson Pro',        name: 'CrimsonPro'       },
+  'linux-libertine':   { label: 'Linux Libertine',    name: 'LinuxLibertine'   },
+  'eb-garamond':       { label: 'EB Garamond',        name: 'EBGaramond'       },
+  'cormorant':         { label: 'Cormorant Garamond', name: 'Cormorant'        },
+  'libre-baskerville': { label: 'Libre Baskerville',  name: 'LibreBaskerville' },
+}
+
+const CDN_URLS: Partial<Record<PdfFont, { normal: string; bold?: string; italic?: string; bolditalic?: string }>> = {
+  'linux-libertine': {
+    normal: `${FS}/linux-libertine/files/linux-libertine-latin-400-normal.woff`,
+    bold:   `${FS}/linux-libertine/files/linux-libertine-latin-700-normal.woff`,
+  },
+  'eb-garamond': {
+    normal:     `${FS}/eb-garamond/files/eb-garamond-latin-400-normal.woff`,
+    bold:       `${FS}/eb-garamond/files/eb-garamond-latin-700-normal.woff`,
+    italic:     `${FS}/eb-garamond/files/eb-garamond-latin-400-italic.woff`,
+    bolditalic: `${FS}/eb-garamond/files/eb-garamond-latin-700-italic.woff`,
+  },
+  'cormorant': {
+    normal:     `${FS}/cormorant-garamond/files/cormorant-garamond-latin-400-normal.woff`,
+    bold:       `${FS}/cormorant-garamond/files/cormorant-garamond-latin-700-normal.woff`,
+    italic:     `${FS}/cormorant-garamond/files/cormorant-garamond-latin-400-italic.woff`,
+    bolditalic: `${FS}/cormorant-garamond/files/cormorant-garamond-latin-700-italic.woff`,
+  },
+  'libre-baskerville': {
+    normal: `${FS}/libre-baskerville/files/libre-baskerville-latin-400-normal.woff`,
+    bold:   `${FS}/libre-baskerville/files/libre-baskerville-latin-700-normal.woff`,
+    italic: `${FS}/libre-baskerville/files/libre-baskerville-latin-400-italic.woff`,
+  },
+}
+
 // ── Font loading ──────────────────────────────────────────────────────────────
 const fontCache = new Map<string, string>()
 
-const FONT_FILES = [
-  'CrimsonPro-Regular.woff',
-  'CrimsonPro-Bold.woff',
-  'CrimsonPro-Italic.woff',
-  'CrimsonPro-BoldItalic.woff',
-] as const
-
-async function loadFont(filename: string): Promise<string> {
-  if (fontCache.has(filename)) return fontCache.get(filename)!
-  const url = `${import.meta.env.BASE_URL}fonts/${filename}`
+async function fetchWoff(url: string, cacheKey: string): Promise<string> {
+  if (fontCache.has(cacheKey)) return fontCache.get(cacheKey)!
   const res = await fetch(url)
-  if (!res.ok) throw new Error(`Could not load font ${filename} (${res.status})`)
-  const buf    = await res.arrayBuffer()
-  const ttfBuf = await woffToTtf(buf)
-  const b64    = toBase64(ttfBuf)
-  fontCache.set(filename, b64)
+  if (!res.ok) throw new Error(`Could not load font (${res.status}): ${url}`)
+  const b64 = toBase64(await woffToTtf(await res.arrayBuffer()))
+  fontCache.set(cacheKey, b64)
   return b64
 }
 
-// Call this right after a resume is generated so fonts are warm by export time.
-export async function preloadFonts(): Promise<void> {
-  await Promise.all(FONT_FILES.map(f => loadFont(f)))
+async function loadLocalWoff(filename: string): Promise<string> {
+  const url = `${import.meta.env.BASE_URL}fonts/${filename}`
+  return fetchWoff(url, filename)
+}
+
+export async function preloadFonts(font: PdfFont = 'crimsonpro'): Promise<void> {
+  if (font === 'crimsonpro') {
+    await Promise.all([
+      'CrimsonPro-Regular.woff', 'CrimsonPro-Bold.woff',
+      'CrimsonPro-Italic.woff',  'CrimsonPro-BoldItalic.woff',
+    ].map(f => loadLocalWoff(f)))
+  } else {
+    const urls = CDN_URLS[font]
+    if (urls) await Promise.all(
+      Object.entries(urls).map(([style, url]) => fetchWoff(url, `${font}_${style}`))
+    )
+  }
 }
 
 async function registerCrimsonPro(doc: jsPDF) {
   const F = 'CrimsonPro'
   const [reg, bold, ital, boldItal] = await Promise.all([
-    loadFont('CrimsonPro-Regular.woff'),
-    loadFont('CrimsonPro-Bold.woff'),
-    loadFont('CrimsonPro-Italic.woff'),
-    loadFont('CrimsonPro-BoldItalic.woff'),
+    loadLocalWoff('CrimsonPro-Regular.woff'),
+    loadLocalWoff('CrimsonPro-Bold.woff'),
+    loadLocalWoff('CrimsonPro-Italic.woff'),
+    loadLocalWoff('CrimsonPro-BoldItalic.woff'),
   ])
   doc.addFileToVFS('CP-Regular.ttf',    reg);      doc.addFont('CP-Regular.ttf',    F, 'normal')
   doc.addFileToVFS('CP-Bold.ttf',       bold);     doc.addFont('CP-Bold.ttf',       F, 'bold')
@@ -133,10 +172,17 @@ async function registerCrimsonPro(doc: jsPDF) {
   doc.addFileToVFS('CP-BoldItalic.ttf', boldItal); doc.addFont('CP-BoldItalic.ttf', F, 'bolditalic')
 }
 
-const FONT_NAME: Record<PdfFont, string> = {
-  crimsonpro: 'CrimsonPro',
-  times:      'times',
-  helvetica:  'helvetica',
+async function registerCdnFont(doc: jsPDF, fontKey: PdfFont) {
+  const { name } = PDF_FONTS[fontKey]
+  const urls = CDN_URLS[fontKey]
+  if (!urls) return
+  const variants = Object.entries(urls) as [string, string][]
+  await Promise.all(variants.map(async ([style, url]) => {
+    const b64 = await fetchWoff(url, `${fontKey}_${style}`)
+    const fname = `${name}_${style}.ttf`
+    doc.addFileToVFS(fname, b64)
+    doc.addFont(fname, name, style)
+  }))
 }
 
 const SIZE_SCALE: Record<PdfSize, number> = {
@@ -148,9 +194,10 @@ const SIZE_SCALE: Record<PdfSize, number> = {
 // ── Layout helpers ────────────────────────────────────────────────────────────
 const PAGE_W = 216
 const PAGE_H = 279
-const M      = 20
+const M      = 15
+const M_BOT  = 10
 const CW     = PAGE_W - M * 2
-const BOTTOM = PAGE_H - M
+const BOTTOM = PAGE_H - M_BOT
 const BASE_LH = 5.8
 
 // Helpers are created as closures inside exportResumePdf to capture font/lh.
@@ -161,22 +208,60 @@ export async function exportResumePdf(
   filename = 'resume.pdf',
   opts: PdfOptions = { font: 'crimsonpro', size: 'regular' }
 ) {
-  const font = FONT_NAME[opts.font]
+  const font = PDF_FONTS[opts.font].name
   const sc   = SIZE_SCALE[opts.size]
   const lh   = BASE_LH * sc
-  const s    = (size: number) => size * sc  // scale a font size
+  const s    = (size: number) => size * sc
 
   const doc = new jsPDF({ unit: 'mm', format: 'letter' })
   if (opts.font === 'crimsonpro') await registerCrimsonPro(doc)
+  else await registerCdnFont(doc, opts.font)
 
   // Closures capturing font + lh
   const S = (style: string, size: number) => { doc.setFont(font, style); doc.setFontSize(s(size)) }
   const cp = (y: number, need = lh) => { if (y + need > BOTTOM) { doc.addPage(); return M } return y }
-  const wt = (text: string, x: number, y: number, maxW: number) => {
-    for (const ln of doc.splitTextToSize(text, maxW) as string[]) {
-      y = cp(y); doc.text(ln, x, y); y += lh
+  // Embedded custom fonts don't support jsPDF's built-in `align: 'justify'`
+  // (it relies on word-spacing of standard fonts), so justify manually by
+  // spacing out each word to fill the line width.
+  const justifyLine = (line: string, x: number, y: number, maxW: number) => {
+    const words = line.split(' ')
+    if (words.length <= 1) { doc.text(line, x, y); return }
+    const spaceW = doc.getTextWidth(' ')
+    const wordsW = words.reduce((acc, w) => acc + doc.getTextWidth(w), 0)
+    const gap = (maxW - wordsW) / (words.length - 1)
+    let cx = x
+    for (const w of words) {
+      doc.text(w, cx, y)
+      cx += doc.getTextWidth(w) + (gap > 0 ? gap : spaceW)
     }
+  }
+  const wt = (text: string, x: number, y: number, maxW: number) => {
+    const lines = doc.splitTextToSize(text, maxW) as string[]
+    // Keep the whole block together on one page when it fits, so a single
+    // line doesn't get orphaned at the bottom while the rest spills over.
+    y = cp(y, lines.length * lh)
+    lines.forEach((ln, i) => {
+      y = cp(y)
+      if (i < lines.length - 1) justifyLine(ln, x, y, maxW)
+      else doc.text(ln, x, y)
+      y += lh
+    })
     return y
+  }
+  // Renders a bulleted block (bullet glyph + wrapped text), keeping the
+  // bullet point and its first line together on the same page.
+  const bulletText = (text: string, y: number, maxW: number) => {
+    const lines = doc.splitTextToSize(text, maxW) as string[]
+    y = cp(y, lines.length * lh)
+    doc.text('•', M + 1.5, y)
+    return wt(text, M + 5, y, maxW)
+  }
+  // Reserves room for an entry's header lines plus the start of its first
+  // bullet, so a role/institution heading doesn't get orphaned alone at the
+  // bottom of a page with all its bullets pushed to the next.
+  const entryHead = (y: number, headerLines: number, firstBullet?: string) => {
+    const bulletLines = firstBullet ? (doc.splitTextToSize(firstBullet, CW - 5) as string[]).length : 0
+    return cp(y, lh * (headerLines + Math.min(bulletLines, 1)))
   }
   const rule = (y: number) => {
     doc.setDrawColor(210, 205, 200); doc.setLineWidth(0.12)
@@ -198,10 +283,10 @@ export async function exportResumePdf(
   y += 7.5
 
   const contactItems = [
-    { label: header.phone,                        href: null },
     { label: header.email,                        href: header.email    ? `mailto:${header.email}` : null },
     { label: header.linkedin ? 'LinkedIn' : null, href: header.linkedin || null },
     { label: header.website  ? 'Website'  : null, href: header.website  || null },
+    { label: header.phone,                        href: null },
     { label: header.location,                     href: null },
     { label: header.github   ? 'GitHub'   : null, href: header.github   || null },
   ].filter(i => i.label) as { label: string; href: string | null }[]
@@ -241,20 +326,20 @@ export async function exportResumePdf(
 
     if (section.type === 'experience') {
       for (const item of section.items) {
-        y = cp(y, lh * 2)
+        y = entryHead(y, 2, item.bullets[0])
         S('bold', 11.5); doc.text(item.role, M, y)
         S('normal', 10.5); doc.text(item.dates, PAGE_W - M, y, { align: 'right' })
         y += lh - 0.5
         y = cp(y); S('italic', 11); doc.text(`${item.company}, ${item.location}`, M, y)
         y += lh
         S('normal', 11)
-        for (const b of item.bullets) { y = cp(y); doc.text('•', M + 1.5, y); y = wt(b, M + 5, y, CW - 5) }
+        for (const b of item.bullets) { y = bulletText(b, y, CW - 5) }
         y += 2
       }
 
     } else if (section.type === 'education') {
       for (const item of section.items) {
-        y = cp(y, lh * 2)
+        y = entryHead(y, 2, item.notes?.[0])
         S('bold', 11.5); doc.text(item.institution, M, y)
         S('normal', 10.5); doc.text(item.dates, PAGE_W - M, y, { align: 'right' })
         y += lh - 0.5
@@ -262,7 +347,7 @@ export async function exportResumePdf(
         y += lh
         if (item.notes?.length) {
           S('normal', 11)
-          for (const n of item.notes) { y = cp(y); doc.text('•', M + 1.5, y); y = wt(n, M + 5, y, CW - 5) }
+          for (const n of item.notes) { y = bulletText(n, y, CW - 5) }
         }
         y += 2
       }
@@ -282,7 +367,7 @@ export async function exportResumePdf(
 
     } else if (section.type === 'projects') {
       for (const item of section.items) {
-        y = cp(y, lh * 2)
+        y = entryHead(y, 1, item.bullets[0])
         S('bold', 11.5)
         const ns = item.tech ? `${item.name}  |  ` : item.name
         doc.text(ns, M, y)
@@ -290,17 +375,17 @@ export async function exportResumePdf(
         if (item.dates) { S('normal', 10.5); doc.text(item.dates, PAGE_W - M, y, { align: 'right' }) }
         y += lh
         S('normal', 11)
-        for (const b of item.bullets) { y = cp(y); doc.text('•', M + 1.5, y); y = wt(b, M + 5, y, CW - 5) }
+        for (const b of item.bullets) { y = bulletText(b, y, CW - 5) }
         y += 2
       }
 
     } else if (section.type === 'publications') {
       S('normal', 11)
-      for (const item of section.items) { y = cp(y); doc.text('•', M + 1.5, y); y = wt(item.citation, M + 5, y, CW - 5); y += 1 }
+      for (const item of section.items) { y = bulletText(item.citation, y, CW - 5); y += 1 }
 
     } else if (section.type === 'custom') {
       S('normal', 11)
-      for (const ln of section.content.split('\n').filter(Boolean)) { y = cp(y); doc.text('•', M + 1.5, y); y = wt(ln, M + 5, y, CW - 5) }
+      for (const ln of section.content.split('\n').filter(Boolean)) { y = bulletText(ln, y, CW - 5) }
     }
 
     y += 3

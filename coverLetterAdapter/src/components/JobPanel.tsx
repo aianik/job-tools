@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useState } from 'react'
 import type { InputTab } from '../types'
 
 interface Props {
@@ -7,13 +7,14 @@ interface Props {
   inputTab: InputTab
   templateReady: boolean
   cvReady: boolean
+  initialJobPosting: string
   onTabChange: (tab: InputTab) => void
   onAdapt: (jobPosting: string) => void
 }
 
-export default function JobPanel({ isGenerating, error, inputTab, templateReady, cvReady, onTabChange, onAdapt }: Props) {
+export default function JobPanel({ isGenerating, error, inputTab, templateReady, cvReady, initialJobPosting, onTabChange, onAdapt }: Props) {
   const anyReady = templateReady || cvReady
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [value, setValue] = useState(initialJobPosting)
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -47,18 +48,19 @@ export default function JobPanel({ isGenerating, error, inputTab, templateReady,
       </div>
 
       <textarea
-        ref={textareaRef}
         id="jobPosting"
         className="job-textarea"
         placeholder="Paste the full job posting here — title, company, responsibilities, requirements. The more detail, the better the adaptation."
         spellCheck={false}
         aria-label="Job posting text"
+        value={value}
+        onChange={e => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
       />
 
       <button
         className={`btn-cta${isGenerating ? ' loading' : ''}`}
-        onClick={() => onAdapt(textareaRef.current?.value ?? '')}
+        onClick={() => onAdapt(value)}
         disabled={isGenerating}
         aria-label="Adapt cover letter (Ctrl+Enter)"
       >

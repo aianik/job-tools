@@ -190,7 +190,9 @@ export default function SourceDrawer({
   }
 
   return (
-    <div id="sourceDrawer" className={`drawer${open ? ' open' : ''}`} role="region" aria-label="Letter source configuration">
+    <>
+      {open && <div className="drawer-backdrop" onClick={onClose} />}
+      <div id="sourceDrawer" className={`drawer drawer-left${open ? ' open' : ''}`} role="region" aria-label="Letter source configuration">
       <div className="drawer-header">
         <span className="drawer-header-title">
           Source
@@ -198,9 +200,13 @@ export default function SourceDrawer({
             <span className="persona-active-badge" title="Persona is active">✦ persona on</span>
           )}
         </span>
-        <button className="drawer-close" onClick={onClose} aria-label="Close source drawer">✕</button>
+        <button className="drawer-close" onClick={onClose} aria-label="Close source drawer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
       </div>
-      <div className="drawer-body drawer-body--row">
+      <div className="drawer-body">
 
         {/* Left: tabs + content */}
         <div className="source-main">
@@ -425,5 +431,6 @@ export default function SourceDrawer({
 
       </div>
     </div>
+    </>
   )
 }

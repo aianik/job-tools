@@ -77,5 +77,5 @@ export type PersonaData = {
   headerInstructions: string
 }
 
-export type PdfFont = 'crimsonpro' | 'times' | 'helvetica'
+export type PdfFont = 'crimsonpro' | 'linux-libertine' | 'eb-garamond' | 'cormorant' | 'libre-baskerville'
 export type PdfSize = 'compact' | 'regular' | 'spacious'
